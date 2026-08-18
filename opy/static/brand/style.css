@@ -1,0 +1,28 @@
+@import url('/static/style.css');
+
+/* Brand Portal Custom Styling Extensions */
+.verification-card {
+  border: 1.5px solid var(--line);
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.verification-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.85em;
+  margin-top: 10px;
+}
+
+/* Service listing cards (Brand Portal) */
+.service-limit-note {
+  font-size: 0.85em;
+  color: var(--ink-soft, inherit);
+}

@@ -1,0 +1,4 @@
+/hash   /static/admin/index.html   200
+/brand         /static/brand/index.html    200
+/static/*   /static/:splat              200
+/*          /index.html                  200
