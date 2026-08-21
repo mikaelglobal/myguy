@@ -281,7 +281,7 @@ function authShell({ eyebrow, headline, pitch, ticker, formHtml }) {
   <div class="auth-shell">
     <div class="auth-brand">
       <div class="mark">
-        <img src="/static/logo.png" alt="My Guy" class="brand-logo">
+        <img src="/static/sitpic/logo.png" alt="My Guy" class="brand-logo">
         <span>My Guy</span>
       </div>
       <div class="pitch">
@@ -490,7 +490,7 @@ function shellHtml({ navItems, activeKey, topbarRight, contentHtml }) {
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
     <aside class="sidebar" id="sidebar">
       <div class="brand">
-        <img src="/static/logo.png" alt="My Guy" class="brand-logo brand-logo-small">
+        <img src="/static/sitpic/logo.png" alt="My Guy" class="brand-logo brand-logo-small">
         <span>My Guy</span>
       </div>
       <nav>${navHtml}</nav>

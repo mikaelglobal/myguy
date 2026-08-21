@@ -1,5 +1,3 @@
-@import url('/static/style.css');
-
 /* Brand Portal Custom Styling Extensions */
 .verification-card {
   border: 1.5px solid var(--line);
@@ -25,4 +23,55 @@
 .service-limit-note {
   font-size: 0.85em;
   color: var(--ink-soft, inherit);
+}
+
+/* Keep brand dashboard content usable on narrow screens. */
+@media (max-width: 768px) {
+  .auth-brand {
+    min-height: 280px;
+    padding: 32px 20px;
+  }
+
+  .auth-form-side {
+    padding: 28px 20px 36px;
+  }
+
+  .view-head {
+    margin-bottom: 18px;
+  }
+
+  .view-head h1 {
+    overflow-wrap: anywhere;
+  }
+
+  .topbar > div[style] {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95em !important;
+  }
+
+  .topbar-right {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .topbar-right .btn-ghost {
+    margin-left: auto;
+  }
+
+  .flex-between {
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .card,
+  .stat-card,
+  .verification-card {
+    padding: 16px;
+  }
+
+  .table-wrap {
+    max-width: 100%;
+  }
 }

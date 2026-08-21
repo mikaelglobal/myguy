@@ -57,7 +57,7 @@ function toggleTheme() {
 
 function renderThemeToggleLabel() {
   document.querySelectorAll('.theme-toggle .tt-label').forEach(el => {
-    el.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '🌙 Night market' : '☀️ Day market';
+    el.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? 'Night market' : 'Day market';
   });
 }
 
@@ -65,10 +65,9 @@ function renderThemeToggleLabel() {
    TOASTS
    ================================================================ */
 function showToast(message, type = 'success') {
-  const icons = { success: '✅', error: '⚠️', info: '💬' };
   const el = document.createElement('div');
   el.className = `toast toast-${type}`;
-  el.innerHTML = `<span class="ic">${icons[type] || ''}</span><span>${escapeHtml(message)}</span>`;
+  el.innerHTML = `<span>${escapeHtml(message)}</span>`;
   document.getElementById('toast-stack').appendChild(el);
   setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 200); }, 3800);
 }
@@ -128,7 +127,7 @@ function naira(n) {
 }
 
 function emptyState(icon, title, body) {
-  return `<div class="empty"><div class="ic">${icon}</div><h4>${title}</h4><p>${body}</p></div>`;
+  return `<div class="empty"><h4>${title}</h4><p>${body}</p></div>`;
 }
 
 async function copyText(text, label = 'Copied to clipboard') {
@@ -196,7 +195,7 @@ function authShell({ eyebrow, headline, pitch, ticker, formHtml }) {
   <div class="auth-shell">
     <div class="auth-brand">
       <div class="mark">
-        <img src="/static/logo.png" alt="My Guy" class="brand-logo">
+        <img src="/static/sitpic/logo.png" alt="My Guy" class="brand-logo">
         <span>My Guy</span>
       </div>
       <div class="pitch">
@@ -403,17 +402,17 @@ function shellHtml({ navItems, activeKey, topbarRight, contentHtml }) {
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
     <aside class="sidebar" id="sidebar">
       <div class="brand">
-        <img src="/static/logo.png" alt="My Guy" class="brand-logo brand-logo-small">
+        <img src="/static/sitpic/logo.png" alt="My Guy" class="brand-logo brand-logo-small">
         <span>My Guy</span>
       </div>
       <nav>${navHtml}</nav>
       <div class="foot">
-        <button class="theme-toggle" onclick="toggleTheme()"><span class="tt-label">Theme</span> ⇄</button>
+        <button class="theme-toggle" onclick="toggleTheme()"><span class="tt-label">Theme</span></button>
       </div>
     </aside>
     <div class="main">
       <div class="topbar">
-        <button class="hamburger" onclick="openSidebar()">☰</button>
+        <button class="hamburger" onclick="openSidebar()" aria-label="Open navigation">Menu</button>
         <div style="font-weight: 700; color: var(--accent); font-size: 1.1em;">Advertiser Dashboard</div>
         <div class="topbar-right">${topbarRight.right || ''}</div>
       </div>
@@ -436,18 +435,18 @@ Pages.dashboard = function () {
   if (!state.user) { Router.navigate('/login'); return; }
   const view = state.ui.activeView;
   const navItems = [
-    { key: 'overview', icon: '📊', label: 'Overview', onClick: "switchBrandView('overview')" },
-    { key: 'ads', icon: '📢', label: 'Broadcast Ads', onClick: "switchBrandView('ads')" },
-    { key: 'services', icon: '🛠️', label: 'My Services', onClick: "switchBrandView('services')" },
-    { key: 'topup', icon: '⬆️', label: 'Top Up', onClick: "switchBrandView('topup')" },
-    { key: 'transactions', icon: '📜', label: 'Ledger Statement', onClick: "switchBrandView('transactions')" },
-    { key: 'proofs', icon: '🧾', label: 'Payment Proofs', onClick: "switchBrandView('proofs')" },
+    { key: 'overview', label: 'Overview', onClick: "switchBrandView('overview')" },
+    { key: 'ads', label: 'Broadcast Ads', onClick: "switchBrandView('ads')" },
+    { key: 'services', label: 'My Services', onClick: "switchBrandView('services')" },
+    { key: 'topup', label: 'Top Up', onClick: "switchBrandView('topup')" },
+    { key: 'transactions', label: 'Ledger Statement', onClick: "switchBrandView('transactions')" },
+    { key: 'proofs', label: 'Payment Proofs', onClick: "switchBrandView('proofs')" },
   ];
   const html = shellHtml({
     activeKey: view, navItems,
     topbarRight: {
       right: `
-        <div class="wallet-pill">💰 ${naira(state.user.wallet_balance)}</div>
+        <div class="wallet-pill">${naira(state.user.wallet_balance)}</div>
         <div class="avatar" style="background:var(--accent); color:var(--accent-ink);" title="${escapeHtml(state.user.business_name)}">BR</div>
         <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Log out</button>`
     },
@@ -498,16 +497,15 @@ function brandOverviewView() {
   return `
     <div class="view-head">
       <div>
-        <h1>Welcome, ${escapeHtml(u.business_name)} 👋</h1>
+        <h1>Welcome, ${escapeHtml(u.business_name)}</h1>
         <div class="sub">Brand ID: <span class="num" style="font-weight: 700; color: var(--accent);">${escapeHtml(u.unique_id)}</span></div>
       </div>
     </div>
 
     <div class="grid grid-3">
-      <div class="stat-card"><span class="ic">💰</span><div class="label">Ad Wallet Balance</div><div class="value">${naira(u.wallet_balance)}</div><div class="delta">Pre-paid ad reach</div></div>
-      <div class="stat-card"><span class="ic">📢</span><div class="label">Broadcast Ads</div><div class="value">${ads.length}</div><div class="delta">${activeAds} currently active</div></div>
+      <div class="stat-card"><div class="label">Ad Wallet Balance</div><div class="value">${naira(u.wallet_balance)}</div><div class="delta">Pre-paid ad reach</div></div>
+      <div class="stat-card"><div class="label">Broadcast Ads</div><div class="value">${ads.length}</div><div class="delta">${activeAds} currently active</div></div>
       <div class="stat-card">
-        <span class="ic">🛡️</span>
         <div class="label">Verification status</div>
         <div class="value" style="font-size: 1.25em; margin-top: 12px;">
           ${u.verified ? '<span class="badge badge-ok">VERIFIED BRAND</span>' :
@@ -518,7 +516,6 @@ function brandOverviewView() {
 
     ${!u.verified ? `
       <div class="verification-card" style="margin-top: 20px;">
-        <span style="font-size: 2.2em;">🛡️</span>
         <h3>Verification Required</h3>
         <p class="muted" style="margin: 8px auto 16px; max-width: 440px;">Brands require a manual account verification before they can post ad campaigns. This requires a one-time verification fee of <b>₦1,000</b>. Make sure you have funded your wallet.</p>
         ${u.verification_pending ? `
@@ -544,7 +541,7 @@ function brandOverviewView() {
             </tbody>
           </table>
         </div>
-      ` : emptyState('📭', 'No ledger activity', 'Top up your wallet to activate verification or fund ad reach.')}
+      ` : emptyState('', 'No ledger activity', 'Top up your wallet to activate verification or fund ad reach.')}
     </div>
   `;
 }
@@ -576,7 +573,6 @@ function brandAdsView() {
     return `
       <div class="view-head"><div><h1>Broadcast Ads</h1><div class="sub">Submit event ticket promotions, pushes or social broadcasts.</div></div></div>
       <div class="card" style="border-color: var(--accent); padding: 30px; text-align: center;">
-        <span style="font-size: 3em;">🛡️</span>
         <h3 style="justify-content: center; margin-top: 15px;">Verification Required</h3>
         <p class="muted" style="margin: 10px auto 20px; max-width: 440px;">Your brand account must be verified by the admin before you can access the ad creation engine. Please verify in the **Overview** dashboard.</p>
       </div>`;
@@ -605,7 +601,6 @@ function brandAdsView() {
             <label>Ad image <span class="faint">(optional)</span></label>
             <div class="dropzone" id="ad-dz">
               <input type="file" id="ad-image" accept="image/*">
-              <div class="dz-ic">🖼️</div>
               <div class="dz-text">Browse ad photo</div>
             </div>
           </div>
@@ -624,7 +619,7 @@ function brandAdsView() {
       <div class="card">
         <h3>Your Broadcast Campaigns</h3>
         <div style="max-height: 580px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
-          ${ads.length ? ads.map(adCardHtml).join('') : emptyState('📢', 'No ads created', 'Create an ad campaign on the left.')}
+          ${ads.length ? ads.map(adCardHtml).join('') : emptyState('', 'No ads created', 'Create an ad campaign on the left.')}
         </div>
       </div>
     </div>
@@ -633,7 +628,7 @@ function brandAdsView() {
 
 function adCardHtml(a) {
   const statusBadge = a.status === 'approved' ? 'badge-ok' : a.status === 'pending' ? 'badge-wait' : 'badge-off';
-  const autoLabel = a.automation_active ? '🟢 Running' : '⏸️ Stopped';
+  const autoLabel = a.automation_active ? 'Running' : 'Stopped';
   return `
     <div class="card" style="padding: 14px;">
       <div class="flex-between">
@@ -714,7 +709,6 @@ function brandServicesView() {
     return `
       <div class="view-head"><div><h1>My Services</h1><div class="sub">List up to 3 services customers can book directly — e.g. electrician, tailor, plumber.</div></div></div>
       <div class="card" style="border-color: var(--accent); padding: 30px; text-align: center;">
-        <span style="font-size: 3em;">🛡️</span>
         <h3 style="justify-content: center; margin-top: 15px;">Verification Required</h3>
         <p class="muted" style="margin: 10px auto 20px; max-width: 440px;">Your brand account must be verified by the admin before you can list services. Please verify in the **Overview** dashboard.</p>
       </div>`;
@@ -737,7 +731,6 @@ function brandServicesView() {
               <label>Photo <span class="faint">(optional)</span></label>
               <div class="dropzone" id="service-dz">
                 <input type="file" id="service-image" accept="image/*">
-                <div class="dz-ic">🖼️</div>
                 <div class="dz-text">Browse a photo of your work</div>
               </div>
             </div>
@@ -749,7 +742,7 @@ function brandServicesView() {
       <div class="card">
         <h3>Your Listed Services</h3>
         <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
-          ${services.length ? services.map(serviceCardHtml).join('') : emptyState('🛠️', 'No services listed', 'Add a service on the left to get started.')}
+          ${services.length ? services.map(serviceCardHtml).join('') : emptyState('', 'No services listed', 'Add a service on the left to get started.')}
         </div>
       </div>
     </div>
@@ -757,7 +750,7 @@ function brandServicesView() {
 }
 
 function serviceCardHtml(s) {
-  const statusLabel = s.active ? '🟢 Visible' : '⏸️ Hidden';
+  const statusLabel = s.active ? 'Visible' : 'Hidden';
   return `
     <div class="card" style="padding: 14px; display:flex; gap:12px; align-items:flex-start;">
       ${s.image ? `<img src="${API_BASE}/static/uploads/services/${s.image}" alt="${escapeHtml(s.title)}" style="width:64px; height:64px; object-fit:cover; border-radius:var(--radius-sm); flex-shrink:0;">` : ''}
@@ -766,7 +759,7 @@ function serviceCardHtml(s) {
           <h4 style="font-size: 1.02em; margin:0;">${escapeHtml(s.title)}</h4>
           <span class="faint">${statusLabel}</span>
         </div>
-        <div class="faint" style="margin: 4px 0;">📍 ${escapeHtml(s.location)} · ${naira(s.rate_per_hour)}/hr</div>
+        <div class="faint" style="margin: 4px 0;">${escapeHtml(s.location)} · ${naira(s.rate_per_hour)}/hr</div>
         ${s.description ? `<p class="muted" style="font-size: .85em; margin: 6px 0; line-height: 1.4;">${escapeHtml(s.description)}</p>` : ''}
         <div style="display:flex; gap:6px; margin-top:8px;">
           <button class="btn btn-ghost btn-xs" onclick="handleServiceToggle('${s.id}')">${s.active ? 'Hide' : 'Show'}</button>
@@ -845,7 +838,7 @@ function brandTopupView() {
         <label style="margin-bottom:6px;">Send payment to</label>
         <div style="font-family:var(--font-mono); font-size:1.15em; font-weight:700; letter-spacing:.02em;">0915104726</div>
         <div style="margin-top:2px;">GT Bank &middot; Michael E.A.</div>
-        <button type="button" class="btn btn-ghost" style="margin-top:10px;" onclick="copyText('0915104726', 'Account number copied')">📋 Copy account number</button>
+        <button type="button" class="btn btn-ghost" style="margin-top:10px;" onclick="copyText('0915104726', 'Account number copied')">Copy account number</button>
         <div class="sub" style="margin-top:8px;">Transfer the amount above, then upload your payment screenshot below for approval.</div>
       </div>
       <form id="topup-form" onsubmit="return handleTopUp(event)">
@@ -854,7 +847,6 @@ function brandTopupView() {
           <label>Payment screenshot</label>
           <div class="dropzone" id="topup-dz">
             <input type="file" id="topup-proof" accept="image/*" required>
-            <div class="dz-ic">🧾</div>
             <div class="dz-text">Drop payment proof screenshot here</div>
           </div>
         </div>
@@ -862,9 +854,9 @@ function brandTopupView() {
       </form>
     </div>
     <div class="card" style="max-width:520px; margin-top: 20px; border-color: var(--accent);">
-      <h3 style="display: flex; gap: 10px; align-items: center;"><span>💬</span> Payment not verified or having issues?</h3>
+      <h3>Payment not verified or having issues?</h3>
       <p class="muted" style="margin: 8px 0 14px;">If your payment is not verified within 24 hours, or you’re having trouble, reach out to our support team on WhatsApp.</p>
-      <button class="btn btn-whatsapp" onclick="contactWhatsAppSupport()">📱 Contact Support on WhatsApp</button>
+      <button class="btn btn-whatsapp" onclick="contactWhatsAppSupport()">Contact Support on WhatsApp</button>
     </div>`;
 }
 
@@ -918,7 +910,7 @@ function brandTransactionsView() {
           </tbody>
         </table>
       </div>
-    ` : emptyState('📜', 'No transactions logged', 'Ledger entries will show here once billing actions begin.')}`;
+    ` : emptyState('', 'No transactions logged', 'Ledger entries will show here once billing actions begin.')}`;
 }
 
 /* -------- payment proofs status -------- */
@@ -942,11 +934,11 @@ function brandProofsView() {
           </tbody>
         </table>
       </div>
-    ` : emptyState('🧾', 'No deposits submitted', 'Upload payment screenshots in the Top Up tab to fund your ad budget.')}
+    ` : emptyState('', 'No deposits submitted', 'Upload payment screenshots in the Top Up tab to fund your ad budget.')}
     <div class="card" style="max-width:520px; margin-top: 20px; border-color: var(--accent);">
-      <h3 style="display: flex; gap: 10px; align-items: center;"><span>💬</span> Payment not verified or having issues?</h3>
+      <h3>Payment not verified or having issues?</h3>
       <p class="muted" style="margin: 8px 0 14px;">If your payment is not verified within 24 hours, or you’re having trouble, reach out to our support team on WhatsApp.</p>
-      <button class="btn btn-whatsapp" onclick="contactWhatsAppSupport()">📱 Contact Support on WhatsApp</button>
+      <button class="btn btn-whatsapp" onclick="contactWhatsAppSupport()">Contact Support on WhatsApp</button>
     </div>`;
 }
 
@@ -1005,6 +997,8 @@ async function refreshDashboard() {
 Router.add('/login', Pages.login);
 Router.add('/signup', Pages.signup);
 Router.add('/dashboard', Pages.dashboard);
+Router.add('/brand', Pages.login);
+Router.add('/brand/', Pages.login);
 
 initTheme();
 restoreSession();

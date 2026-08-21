@@ -773,7 +773,7 @@ textarea.input {
 
 .wallet-pill {
   background: var(--primary-soft);
-  color: ;
+  color: var(--ink);
   padding: 6px 16px;
   border-radius: 999px;
   font-weight: 700;
