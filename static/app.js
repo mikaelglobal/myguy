@@ -19,6 +19,30 @@ const state = {
   }
 };
 
+const SESSION_KEY = 'myguy-vendor-session';
+
+function saveSession() {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({
+    user: state.user,
+    products: state.products,
+    transactions: state.transactions,
+    proofs: state.proofs,
+    ads: state.ads,
+    plans: state.plans,
+    adFrequencies: state.adFrequencies,
+    perImpression: state.perImpression
+  }));
+}
+
+function restoreSession() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if (saved && saved.user) Object.assign(state, saved);
+  } catch (e) {
+    localStorage.removeItem(SESSION_KEY);
+  }
+}
+
 /* ================================================================
    THEME
    ================================================================ */
@@ -180,7 +204,7 @@ function compressImage(file, maxWidth = 1200, maxHeight = 1200, quality = 0.7) {
 }
 
 /* ================================================================
-   API CLIENT (FIXED: token auth fallback for mobile Chrome
+   API CLIENT (token auth fallback for mobile Chrome/Safari
    cross-site cookie blocking, plus credentials: 'include')
    ================================================================ */
 const API = {
@@ -199,6 +223,7 @@ const API = {
       const res = await fetch(fullUrl, cfg);
       const data = await res.json();
 
+      // If the response indicates failure, throw with the server message
       if (!res.ok && data.error) {
         throw new Error(data.error);
       }
@@ -208,6 +233,7 @@ const API = {
 
       return data;
     } catch (err) {
+      // Re-throw with a clear message
       throw new Error(err.message || 'Network error – please check your connection');
     }
   },
@@ -255,7 +281,7 @@ function authShell({ eyebrow, headline, pitch, ticker, formHtml }) {
   <div class="auth-shell">
     <div class="auth-brand">
       <div class="mark">
-        <span class="logo-icon">🛍️</span>
+        <img src="/static/logo.png" alt="My Guy" class="brand-logo">
         <span>My Guy</span>
       </div>
       <div class="pitch">
@@ -387,6 +413,7 @@ async function handleLogin(e) {
         setTimeout(() => { window.location.href = '/brand'; }, 1000);
         return;
       }
+      if (data.token) localStorage.setItem('myguy-token', data.token);
       Object.assign(state, {
         user: data.user,
         products: data.products || [],
@@ -397,6 +424,7 @@ async function handleLogin(e) {
         adFrequencies: data.ad_frequencies || {},
         perImpression: data.per_impression || 5
       });
+      saveSession();
       showToast(`Welcome back, ${data.user.business_name}!`, 'success');
       Router.navigate('/dashboard');
     } else {
@@ -437,6 +465,8 @@ async function handleSignup(e) {
 
 async function handleLogout() {
   try { await API.logout(); } catch (e) {}
+  localStorage.removeItem('myguy-token');
+  localStorage.removeItem(SESSION_KEY);
   state.user = null;
   state.products = [];
   state.transactions = [];
@@ -460,7 +490,7 @@ function shellHtml({ navItems, activeKey, topbarRight, contentHtml }) {
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
     <aside class="sidebar" id="sidebar">
       <div class="brand">
-        <span class="logo-icon" style="width:32px;height:32px;font-size:1rem;">🛍️</span>
+        <img src="/static/logo.png" alt="My Guy" class="brand-logo brand-logo-small">
         <span>My Guy</span>
       </div>
       <nav>${navHtml}</nav>
@@ -498,6 +528,7 @@ Pages.dashboard = function () {
     { key: 'overview', icon: '📊', label: 'Overview', onClick: "switchVendorView('overview')" },
     { key: 'products', icon: '📦', label: 'My Products', onClick: "switchVendorView('products')" },
     { key: 'add-product', icon: '➕', label: 'Add Product', onClick: "switchVendorView('add-product')" },
+    { key: 'ads', icon: '📢', label: 'My Ads', onClick: "switchVendorView('ads')" },
     { key: 'topup', icon: '⬆️', label: 'Top Up', onClick: "switchVendorView('topup')" },
     { key: 'plan', icon: '📋', label: 'Subscription Plan', onClick: "switchVendorView('plan')" },
     { key: 'transactions', icon: '📜', label: 'Ledger', onClick: "switchVendorView('transactions')" },
@@ -532,6 +563,7 @@ function renderVendorView() {
     overview: vendorOverviewView,
     products: vendorProductsView,
     'add-product': vendorAddProductView,
+    ads: vendorAdsView,
     topup: vendorTopupView,
     plan: vendorPlanView,
     transactions: vendorTransactionsView,
@@ -541,12 +573,13 @@ function renderVendorView() {
   root.innerHTML = renderers[view] ? renderers[view]() : '';
 
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  const idx = ['overview', 'products', 'add-product', 'topup', 'plan', 'transactions', 'proofs', 'profile'].indexOf(view);
+  const idx = ['overview', 'products', 'add-product', 'ads', 'topup', 'plan', 'transactions', 'proofs', 'profile'].indexOf(view);
   const navEls = document.querySelectorAll('.sidebar .nav-item');
   if (navEls[idx]) navEls[idx].classList.add('active');
 
   if (view === 'add-product') setupDropzone('product-image', 'product-dz');
   if (view === 'topup') setupDropzone('topup-proof', 'topup-dz');
+  if (view === 'ads' && vendorCanRunAds() && (state.ads || []).length < 3) setupDropzone('ad-image', 'ad-dz');
 }
 
 function initials(name) {
@@ -756,6 +789,178 @@ async function handleAddProduct(e) {
     showToast(err.message || 'Failed to list product – please try again', 'error');
     btn.disabled = false; btn.textContent = 'List Product';
   }
+}
+
+/* -------- ads -------- */
+function vendorCanRunAds() {
+  const u = state.user;
+  return u.active_plan && ['boost', 'prime'].includes(u.active_plan) && u.plan_expiry && new Date(u.plan_expiry) > new Date();
+}
+
+function vendorAdsView() {
+  const u = state.user;
+  const ads = state.ads || [];
+  const atLimit = ads.length >= 3;
+
+  if (!vendorCanRunAds()) {
+    return `
+      <div class="view-head"><div><h1>My Ads</h1><div class="sub">Run up to 3 broadcast ads to WhatsApp shoppers.</div></div></div>
+      <div class="card" style="border-color: var(--accent); padding: 30px; text-align: center;">
+        <span style="font-size: 3em;">📋</span>
+        <h3 style="justify-content: center; margin-top: 15px;">Boost or Prime plan required</h3>
+        <p class="muted" style="margin: 10px auto 20px; max-width: 440px;">Only vendors on an active Boost or Prime plan can run ads. Upgrade in the <b>Subscription Plan</b> tab.</p>
+        <button class="btn btn-primary" onclick="switchVendorView('plan')">View Plans</button>
+      </div>`;
+  }
+
+  return `
+    <div class="view-head"><div><h1>My Ads</h1><div class="sub">${ads.length}/3 ads created. New ads need admin approval before they go live.</div></div></div>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>${atLimit ? 'Ad limit reached' : 'Create and pay for Ad'}</h3>
+        ${atLimit ? `
+          <p class="muted" style="margin-top:10px;">You've created the maximum of 3 ads. Delete one to create a different one.</p>
+        ` : `
+          <form id="add-ad-form" onsubmit="return handleCreateAd(event)">
+            <div class="field"><label>Ad Title</label><input class="input" id="ad-title" required placeholder="Weekend Sneaker Sale" maxlength="80"></div>
+            <div class="field"><label>Broadcast Message</label><textarea class="input" id="ad-message" rows="4" required placeholder="Tell WhatsApp shoppers about your promo." maxlength="400"></textarea></div>
+            <div class="field">
+              <label>Ad Type</label>
+              <select class="input" id="ad-type" onchange="calculateAdCost()">
+                <option value="reach">Reach ad (Plain broadcast) - ₦10/person</option>
+                <option value="spotlight">Spotlight ad (Broadcast + AI-crafted mention) - ₦15/person</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Weekly reach commitment (min 100)</label>
+              <input class="input" type="number" id="ad-reach" value="100" min="100" required oninput="calculateAdCost()">
+            </div>
+            <div class="field">
+              <label>Ad image <span class="faint">(optional)</span></label>
+              <div class="dropzone" id="ad-dz">
+                <input type="file" id="ad-image" accept="image/*">
+                <div class="dz-ic">🖼️</div>
+                <div class="dz-text">Browse ad photo</div>
+              </div>
+            </div>
+            <div class="receipt" style="padding: 16px; margin-bottom: 18px; border-style: dashed;">
+              <div class="flex-between">
+                <span>Rate:</span><span id="ad-cost-rate">₦10 / person</span>
+              </div>
+              <div class="flex-between" style="font-weight: 700; margin-top: 5px;">
+                <span>Total Cost (debit):</span><span id="ad-cost-total">₦1,000.00</span>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" id="ad-submit">Pay upfront & submit ad</button>
+          </form>
+        `}
+      </div>
+
+      <div class="card">
+        <h3>Your Ad Campaigns</h3>
+        <div style="max-height: 580px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+          ${ads.length ? ads.map(adCardHtml).join('') : emptyState('📢', 'No ads created', 'Create an ad campaign on the left.')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function adCardHtml(a) {
+  const statusBadge = a.status === 'approved' ? 'badge-ok' : a.status === 'pending' ? 'badge-wait' : 'badge-off';
+  const autoLabel = a.automation_active ? '🟢 Running' : '⏸️ Stopped';
+  return `
+    <div class="card" style="padding: 14px;">
+      <div class="flex-between">
+        <h4 style="font-size: 1.02em;">${escapeHtml(a.title)}</h4>
+        <span class="badge ${statusBadge}">${a.status.toUpperCase()}</span>
+      </div>
+      <p class="muted" style="font-size: .88em; margin: 8px 0; line-height: 1.4;">${escapeHtml(a.message)}</p>
+      <div class="faint" style="margin-bottom: 8px;">
+        Type: <b>${escapeHtml(a.ad_type.toUpperCase())}</b> · Target: <b>${a.weekly_reach}</b> people (paid <b>${naira(a.total_cost)}</b>)
+      </div>
+      <div class="flex-between" style="border-top: 1px dashed var(--line); padding-top: 10px; margin-top: 10px;">
+        <span class="faint">Sent: <b>${a.times_sent || 0} times</b> · Automation: <b>${autoLabel}</b></span>
+        <div style="display:flex; gap:6px;">
+          ${a.status === 'approved' ? `
+            <button class="btn btn-ghost btn-xs" onclick="handleAdToggle('${a.id}')">${a.automation_active ? 'Stop' : 'Start'}</button>
+          ` : ''}
+          ${a.status !== 'approved' || !a.automation_active ? `
+            <button class="btn btn-danger btn-xs" onclick="handleDeleteAd('${a.id}','${escapeHtml(a.title)}')">Delete</button>
+          ` : ''}
+        </div>
+      </div>
+    </div>`;
+}
+
+function calculateAdCost() {
+  const type = document.getElementById('ad-type').value;
+  const reach = parseInt(document.getElementById('ad-reach').value || 0);
+  const rate = type === 'reach' ? 10 : 15;
+  const cost = reach * rate;
+
+  document.getElementById('ad-cost-rate').textContent = `₦${rate} / person`;
+  document.getElementById('ad-cost-total').textContent = naira(cost);
+}
+
+async function handleCreateAd(e) {
+  e.preventDefault();
+  const btn = document.getElementById('ad-submit');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Paying & Submitting…';
+  const fd = new FormData();
+  fd.append('title', document.getElementById('ad-title').value);
+  fd.append('message', document.getElementById('ad-message').value);
+  fd.append('ad_type', document.getElementById('ad-type').value);
+  fd.append('weekly_reach', document.getElementById('ad-reach').value);
+
+  const imgInput = document.getElementById('ad-image');
+  if (imgInput.files[0]) fd.append('image', imgInput.files[0]);
+
+  try {
+    const data = await API.addAd(fd);
+    if (data.success) {
+      showToast('Ad paid and submitted for admin review', 'success');
+      await refreshDashboard();
+      switchVendorView('ads');
+    } else {
+      showToast(data.error || 'Failed to submit ad', 'error');
+      btn.disabled = false; btn.textContent = 'Pay upfront & submit ad';
+    }
+  } catch (err) {
+    showToast(err.message || 'Connection error', 'error');
+    btn.disabled = false; btn.textContent = 'Pay upfront & submit ad';
+  }
+}
+
+async function handleAdToggle(aid) {
+  try {
+    const data = await API.toggleAd(aid);
+    if (data.success) {
+      showToast('Ad status updated', 'success');
+      await refreshDashboard();
+    } else {
+      showToast(data.error || 'Failed to toggle ad', 'error');
+    }
+  } catch (err) { showToast('Action failed', 'error'); }
+}
+
+async function handleDeleteAd(aid, title) {
+  const ok = await openModal({
+    title: `Delete "${title}"?`,
+    body: 'This action cannot be undone. Are you sure?',
+    confirmText: 'Delete Ad',
+    danger: true
+  });
+  if (!ok) return;
+  try {
+    const data = await API.deleteAd(aid);
+    if (data.success) {
+      showToast('Ad deleted', 'success');
+      await refreshDashboard();
+    } else {
+      showToast(data.error || 'Failed to delete ad', 'error');
+    }
+  } catch (err) { showToast('Action failed', 'error'); }
 }
 
 /* -------- top up -------- */
@@ -1078,6 +1283,7 @@ Router.add('/signup', Pages.signup);
 Router.add('/dashboard', Pages.dashboard);
 
 initTheme();
+restoreSession();
 Router.init();
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1098,9 +1304,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         adFrequencies: data.ad_frequencies || {},
         perImpression: data.per_impression || 5
       });
+      saveSession();
       Router.navigate('/dashboard');
       return;
     }
   } catch (e) {}
-  Router.navigate('/login');
+  if (!state.user) Router.navigate('/login');
 });

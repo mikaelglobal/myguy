@@ -198,7 +198,7 @@ function authShell({ eyebrow, headline, pitch, formHtml }) {
   <div class="auth-shell">
     <div class="auth-brand">
       <div class="mark">
-        <img src="${API_BASE}/static/logo.png" alt="My Guy" style="height:40px; width:auto;" onerror="this.style.display='none'">
+        <img src="/static/logo.png" alt="My Guy" class="brand-logo" onerror="this.style.display='none'">
         <span class="logo-text">My Guy</span>
       </div>
       <div class="pitch">
@@ -268,8 +268,8 @@ async function handleAdminLogin(e) {
   try {
     const data = await API.adminLogin(u, p);
     if (data.success) {
-      // Store admin state in sessionStorage for persistence
-      sessionStorage.setItem('adminSession', JSON.stringify({
+      // Store admin state locally so a browser refresh keeps the dashboard available.
+      localStorage.setItem('adminSession', JSON.stringify({
         isAdmin: true,
         stats: data.stats || {},
         allUsers: data.users || [],
@@ -306,7 +306,7 @@ async function handleAdminLogin(e) {
 
 async function handleAdminLogout() {
   try { await API.adminLogout(); } catch (e) {}
-  sessionStorage.removeItem('adminSession');
+  localStorage.removeItem('adminSession');
   state.isAdmin = false;
   showToast('Admin session logged out', 'info');
   Router.navigate('/login');
@@ -326,7 +326,7 @@ function shellHtml({ navItems, activeKey, topbarRight, contentHtml }) {
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
     <aside class="sidebar" id="sidebar">
       <div class="brand">
-        <img src="${API_BASE}/static/logo.png" alt="My Guy" style="height:32px; width:auto;" onerror="this.style.display='none'">
+        <img src="/static/logo.png" alt="My Guy" class="brand-logo brand-logo-small" onerror="this.style.display='none'">
         <span>My Guy</span>
       </div>
       <nav>${navHtml}</nav>
@@ -985,10 +985,10 @@ async function togglePauseChat(phone) {
         state.conversations = state.conversations || [];
         state.conversations.push({ phone, count: 0, last_message: '', last_time: '', paused: res.paused });
       }
-      // Keep sessionStorage in sync
-      const sessionData = JSON.parse(sessionStorage.getItem('adminSession') || '{}');
+      // Keep the durable admin session in sync.
+      const sessionData = JSON.parse(localStorage.getItem('adminSession') || '{}');
       sessionData.conversations = state.conversations;
-      sessionStorage.setItem('adminSession', JSON.stringify(sessionData));
+      localStorage.setItem('adminSession', JSON.stringify(sessionData));
       showToast(res.paused ? 'AI paused for this chat' : 'AI resumed for this chat', 'success');
       renderConversationDetail();
     } else {
@@ -1190,10 +1190,10 @@ async function handleSaveSettings(e) {
     if (res.success) {
       showToast('Settings saved successfully', 'success');
       state.settings = res.settings || {};
-      // Update sessionStorage
-      const sessionData = JSON.parse(sessionStorage.getItem('adminSession') || '{}');
+      // Update the durable admin session.
+      const sessionData = JSON.parse(localStorage.getItem('adminSession') || '{}');
       sessionData.settings = res.settings || {};
-      sessionStorage.setItem('adminSession', JSON.stringify(sessionData));
+      localStorage.setItem('adminSession', JSON.stringify(sessionData));
     }
   } catch (err) { showToast('Action failed', 'error'); }
   btn.disabled = false; btn.textContent = 'Save Settings Config';
@@ -1264,7 +1264,7 @@ async function refreshAdminDashboard() {
         conversations: data.conversations || [],
         settings: data.settings || {}
       };
-      sessionStorage.setItem('adminSession', JSON.stringify(sessionData));
+      localStorage.setItem('adminSession', JSON.stringify(sessionData));
       Pages.dashboard();
     }
   } catch (err) { console.error('Dashboard refresh failed:', err); }
@@ -1280,8 +1280,8 @@ initTheme();
 
 // Check for existing session on load
 document.addEventListener('DOMContentLoaded', async () => {
-  // Check sessionStorage first
-  const savedSession = sessionStorage.getItem('adminSession');
+  // Check the durable session first.
+  const savedSession = localStorage.getItem('adminSession');
   if (savedSession) {
     try {
       const sessionData = JSON.parse(savedSession);
@@ -1298,7 +1298,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const isValid = await checkAuth();
         if (!isValid) {
           // Server says session expired - clear local state and redirect to login
-          sessionStorage.removeItem('adminSession');
+          localStorage.removeItem('adminSession');
           state.isAdmin = false;
           Router.navigate('/login');
         }
@@ -1322,7 +1322,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         conversations: data.conversations || [],
         settings: data.settings || {}
       });
-      // Save to sessionStorage
+      // Save the durable session.
       const sessionData = {
         isAdmin: true,
         stats: data.stats || {},
@@ -1334,7 +1334,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         conversations: data.conversations || [],
         settings: data.settings || {}
       };
-      sessionStorage.setItem('adminSession', JSON.stringify(sessionData));
+      localStorage.setItem('adminSession', JSON.stringify(sessionData));
       Router.navigate('/dashboard');
       return;
     }

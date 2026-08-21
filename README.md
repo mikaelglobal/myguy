@@ -29,7 +29,7 @@ A modern, feature-rich platform for selling products directly through WhatsApp. 
 ## Project Structure
 
 ```
-myguy_frontend/
+myguy
 ├── index.html              # Main application entry point
 ├── _redirects              # Routing configuration
 ├── static/

@@ -16,6 +16,28 @@ const state = {
   }
 };
 
+const SESSION_KEY = 'myguy-brand-session';
+
+function saveSession() {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({
+    user: state.user,
+    transactions: state.transactions,
+    proofs: state.proofs,
+    ads: state.ads,
+    services: state.services,
+    adFrequencies: state.adFrequencies
+  }));
+}
+
+function restoreSession() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if (saved && saved.user) Object.assign(state, saved);
+  } catch (e) {
+    localStorage.removeItem(SESSION_KEY);
+  }
+}
+
 /* ================================================================
    THEME
    ================================================================ */
@@ -174,7 +196,7 @@ function authShell({ eyebrow, headline, pitch, ticker, formHtml }) {
   <div class="auth-shell">
     <div class="auth-brand">
       <div class="mark">
-        <span class="logo-icon">📢</span>
+        <img src="/static/logo.png" alt="My Guy" class="brand-logo">
         <span>My Guy</span>
       </div>
       <div class="pitch">
@@ -318,6 +340,7 @@ async function handleLogin(e) {
         services: data.services || [],
         adFrequencies: data.ad_frequencies || {}
       });
+      saveSession();
       showToast(`Welcome back, ${data.user.business_name}!`, 'success');
       Router.navigate('/dashboard');
     } else {
@@ -360,6 +383,7 @@ async function handleSignup(e) {
 async function handleLogout() {
   try { await API.logout(); } catch (e) {}
   state.user = null;
+  localStorage.removeItem(SESSION_KEY);
   state.transactions = [];
   state.proofs = [];
   showToast('Signed out successfully', 'info');
@@ -379,7 +403,7 @@ function shellHtml({ navItems, activeKey, topbarRight, contentHtml }) {
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
     <aside class="sidebar" id="sidebar">
       <div class="brand">
-        <span class="logo-icon" style="width:32px;height:32px;font-size:1rem;">📢</span>
+        <img src="/static/logo.png" alt="My Guy" class="brand-logo brand-logo-small">
         <span>My Guy</span>
       </div>
       <nav>${navHtml}</nav>
@@ -983,6 +1007,7 @@ Router.add('/signup', Pages.signup);
 Router.add('/dashboard', Pages.dashboard);
 
 initTheme();
+restoreSession();
 Router.init();
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1001,9 +1026,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         services: data.services || [],
         adFrequencies: data.ad_frequencies || {}
       });
+      saveSession();
       Router.navigate('/dashboard');
       return;
     }
   } catch (e) {}
-  Router.navigate('/login');
+  if (!state.user) Router.navigate('/login');
 });

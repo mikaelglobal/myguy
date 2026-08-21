@@ -152,6 +152,16 @@ a:hover { color: var(--primary); }
   flex-shrink: 0;
 }
 
+.brand-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+.brand-logo-small {
+  height: 32px;
+}
+
 .logo-text {
   background: var(--primary-gradient);
   -webkit-background-clip: text;
